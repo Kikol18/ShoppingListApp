@@ -1,0 +1,55 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:local="clr-namespace:ShoppingListApp.ViewModels"
+             x:Class="ShoppingListApp.Views.MainPage">
+
+    <ContentPage.BindingContext>
+        <local:MainPageViewModel />
+    </ContentPage.BindingContext>
+
+    <StackLayout Padding="10">
+        <Entry Placeholder="Nowa kategoria" Text="{Binding NewCategoryName}" />
+        <Button Text="Dodaj kategorię" Command="{Binding AddCategoryCommand}" />
+
+        <Picker Title="Wybierz kategorię"
+                ItemsSource="{Binding Categories}"
+                ItemDisplayBinding="{Binding Name}"
+                SelectedItem="{Binding SelectedCategory}" />
+        <Entry Placeholder="Nazwa produktu" Text="{Binding NewProductName}" />
+        <Entry Placeholder="Ilość" Text="{Binding NewProductQuantity}" Keyboard="Numeric" />
+        <Entry Placeholder="Jednostka" Text="{Binding NewProductUnit}" />
+        <Button Text="Dodaj produkt" Command="{Binding AddProductCommand}" />
+
+        <CollectionView ItemsSource="{Binding Products}">
+            <CollectionView.ItemTemplate>
+                <DataTemplate>
+                    <StackLayout Orientation="Horizontal" Spacing="10">
+                        <Label Text="{Binding Name}" WidthRequest="100">
+                            <Label.TextDecorations>
+                                <MultiBinding Converter="{StaticResource BoolToTextDecorationConverter}">
+                                    <Binding Path="IsPurchased" />
+                                    <Binding Path="Quantity" />
+                                </MultiBinding>
+                            </Label.TextDecorations>
+                        </Label>
+                        <StackLayout Orientation="Horizontal" VerticalOptions="Center">
+                            <Button Text="-" Command="{Binding DecreaseQuantityCommand}" WidthRequest="40" />
+                            <Label Text="{Binding Quantity}" WidthRequest="50" HorizontalTextAlignment="Center" />
+                            <Button Text="+" Command="{Binding IncreaseQuantityCommand}" WidthRequest="40" />
+                        </StackLayout>
+                        <Label Text="{Binding Unit}" WidthRequest="50" />
+                        <Label Text="{Binding Category.Name}" WidthRequest="100" />
+                        <CheckBox IsChecked="{Binding IsPurchased}" />
+
+                        <Button Text="Usuń" 
+                        Command="{Binding BindingContext.RemoveProductCommand, Source={RelativeSource AncestorType={x:Type CollectionView}}}" 
+                        CommandParameter="{Binding}" />
+                    </StackLayout>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+
+    </StackLayout>
+</ContentPage>
+
