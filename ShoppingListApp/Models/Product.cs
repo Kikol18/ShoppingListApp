@@ -8,10 +8,11 @@ namespace ShoppingListApp.Models
     [Serializable]
     public class Product
     {
-        public string Name { get; set; }
+        public required string Name { get; set; }
         public int Quantity { get; set; }
-        public string Unit { get; set; }
+        public required string Unit { get; set; }
+        public required string CategoryName { get; set; }
         public bool IsPurchased { get; set; }
-        public string CategoryName { get; set; } // Używamy nazwy kategorii jako odwołania
     }
+
 }

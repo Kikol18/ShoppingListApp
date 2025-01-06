@@ -13,14 +13,14 @@ namespace ShoppingListApp.ViewModels
     {
         private static readonly string FilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ShoppingListData.xml");
 
-        public ObservableCollection<Category> Categories { get; set; }
-        public ObservableCollection<Product> Products { get; set; }
+        public ObservableCollection<Category> Categories { get; set; } = new ObservableCollection<Category>();
+        public ObservableCollection<Product> Products { get; set; } = new ObservableCollection<Product>();
 
-        public string NewCategoryName { get; set; }
-        public string NewProductName { get; set; }
-        public int NewProductQuantity { get; set; }
-        public string NewProductUnit { get; set; }
-        public Category SelectedCategory { get; set; }
+        public string NewCategoryName { get; set; } = string.Empty; // Inicjalizacja domyślna
+        public string NewProductName { get; set; } = string.Empty; // Inicjalizacja domyślna
+        public int NewProductQuantity { get; set; } = 0; // Inicjalizacja domyślna
+        public string NewProductUnit { get; set; } = string.Empty; // Inicjalizacja domyślna
+        public Category? SelectedCategory { get; set; } // Dopuszczamy wartość null
 
         public ICommand AddCategoryCommand { get; }
         public ICommand AddProductCommand { get; }
@@ -30,9 +30,6 @@ namespace ShoppingListApp.ViewModels
 
         public MainPageViewModel()
         {
-            Categories = new ObservableCollection<Category>();
-            Products = new ObservableCollection<Product>();
-
             AddCategoryCommand = new Command(AddCategory);
             AddProductCommand = new Command(AddProduct);
             RemoveProductCommand = new Command<Product>(RemoveProduct);
@@ -52,7 +49,7 @@ namespace ShoppingListApp.ViewModels
                 Categories.Add(new Category { Name = NewCategoryName });
                 NewCategoryName = string.Empty;
                 OnPropertyChanged(nameof(NewCategoryName));
-                SaveToXml(); // Save after adding a new category
+                SaveToXml();
             }
         }
 
@@ -75,7 +72,7 @@ namespace ShoppingListApp.ViewModels
                 OnPropertyChanged(nameof(NewProductName));
                 OnPropertyChanged(nameof(NewProductQuantity));
                 OnPropertyChanged(nameof(NewProductUnit));
-                SaveToXml(); // Save after adding a new product
+                SaveToXml();
             }
         }
 
@@ -84,7 +81,7 @@ namespace ShoppingListApp.ViewModels
             if (Products.Contains(product))
             {
                 Products.Remove(product);
-                SaveToXml(); // Save after removing a product
+                SaveToXml();
             }
         }
 
@@ -95,7 +92,7 @@ namespace ShoppingListApp.ViewModels
                 product.Quantity++;
                 SortProducts();
                 OnPropertyChanged(nameof(Products));
-                SaveToXml(); // Save after changing quantity
+                SaveToXml();
             }
         }
 
@@ -106,7 +103,7 @@ namespace ShoppingListApp.ViewModels
                 product.Quantity--;
                 SortProducts();
                 OnPropertyChanged(nameof(Products));
-                SaveToXml(); // Save after changing quantity
+                SaveToXml();
             }
         }
 
@@ -148,13 +145,16 @@ namespace ShoppingListApp.ViewModels
             {
                 using var reader = new StreamReader(FilePath);
                 var serializer = new XmlSerializer(typeof(ShoppingListData));
-                var data = (ShoppingListData)serializer.Deserialize(reader);
+                var data = serializer.Deserialize(reader) as ShoppingListData;
 
-                Categories = new ObservableCollection<Category>(data.Categories);
-                Products = new ObservableCollection<Product>(data.Products);
+                if (data != null)
+                {
+                    Categories = new ObservableCollection<Category>(data.Categories ?? new List<Category>());
+                    Products = new ObservableCollection<Product>(data.Products ?? new List<Product>());
 
-                OnPropertyChanged(nameof(Categories));
-                OnPropertyChanged(nameof(Products));
+                    OnPropertyChanged(nameof(Categories));
+                    OnPropertyChanged(nameof(Products));
+                }
             }
             catch (Exception ex)
             {
@@ -162,7 +162,8 @@ namespace ShoppingListApp.ViewModels
             }
         }
 
-        public event PropertyChangedEventHandler PropertyChanged;
+
+        public event PropertyChangedEventHandler? PropertyChanged;
 
         protected void OnPropertyChanged(string propertyName)
         {
@@ -173,7 +174,7 @@ namespace ShoppingListApp.ViewModels
     [Serializable]
     public class ShoppingListData
     {
-        public List<Category> Categories { get; set; }
-        public List<Product> Products { get; set; }
+        public List<Category> Categories { get; set; } = new List<Category>();
+        public List<Product> Products { get; set; } = new List<Product>();
     }
 }

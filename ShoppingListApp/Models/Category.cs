@@ -5,6 +5,6 @@ namespace ShoppingListApp.Models
     [Serializable]
     public class Category
     {
-        public string Name { get; set; }
+        public required string Name { get; set; }
     }
 }
