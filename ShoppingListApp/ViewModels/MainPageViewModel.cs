@@ -7,174 +7,156 @@ using System.Windows.Input;
 using System.Xml.Serialization;
 using ShoppingListApp.Models;
 
-namespace ShoppingListApp.ViewModels
+namespace ShoppingListApp.ViewModels;
+
+public class MainPageViewModel : BaseViewModel
 {
-    public class MainPageViewModel : INotifyPropertyChanged
+    private const string FilePath = "ShoppingList.xml";
+
+    public ObservableCollection<Category> Categories { get; set; } = new ObservableCollection<Category>();
+    public ObservableCollection<Product> Products { get; set; } = new ObservableCollection<Product>();
+
+    public string NewCategoryName { get; set; } = string.Empty;
+    public string NewProductName { get; set; } = string.Empty;
+    public string NewProductUnit { get; set; } = string.Empty;
+    public Category? SelectedCategory { get; set; }
+
+    public ICommand AddCategoryCommand { get; }
+    public ICommand AddProductCommand { get; }
+    public ICommand IncreaseQuantityCommand { get; }
+    public ICommand DecreaseQuantityCommand { get; }
+    public ICommand DeleteProductCommand { get; }
+
+    public MainPageViewModel()
     {
-        private static readonly string FilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ShoppingListData.xml");
+        AddCategoryCommand = new Command(AddCategory);
+        AddProductCommand = new Command(AddProduct);
+        IncreaseQuantityCommand = new Command<Product>(IncreaseQuantity);
+        DecreaseQuantityCommand = new Command<Product>(DecreaseQuantity);
+        DeleteProductCommand = new Command<Product>(DeleteProduct);
 
-        public ObservableCollection<Category> Categories { get; set; } = new ObservableCollection<Category>();
-        public ObservableCollection<Product> Products { get; set; } = new ObservableCollection<Product>();
+        LoadData();
+        InitializeDefaultCategories();
+    }
 
-        public string NewCategoryName { get; set; } = string.Empty; // Inicjalizacja domyślna
-        public string NewProductName { get; set; } = string.Empty; // Inicjalizacja domyślna
-        public int NewProductQuantity { get; set; } = 0; // Inicjalizacja domyślna
-        public string NewProductUnit { get; set; } = string.Empty; // Inicjalizacja domyślna
-        public Category? SelectedCategory { get; set; } // Dopuszczamy wartość null
-
-        public ICommand AddCategoryCommand { get; }
-        public ICommand AddProductCommand { get; }
-        public ICommand RemoveProductCommand { get; }
-        public ICommand IncreaseQuantityCommand { get; }
-        public ICommand DecreaseQuantityCommand { get; }
-
-        public MainPageViewModel()
+    private void InitializeDefaultCategories()
+    {
+        if (Categories.Count == 0)
         {
-            AddCategoryCommand = new Command(AddCategory);
-            AddProductCommand = new Command(AddProduct);
-            RemoveProductCommand = new Command<Product>(RemoveProduct);
-            IncreaseQuantityCommand = new Command<Product>(IncreaseQuantity);
-            DecreaseQuantityCommand = new Command<Product>(DecreaseQuantity);
-
-            LoadFromXml();
-
-            Products.CollectionChanged += (_, __) => SaveToXml();
-            Categories.CollectionChanged += (_, __) => SaveToXml();
+            Categories.Add(new Category { Name = "Fruits" });
+            Categories.Add(new Category { Name = "Vegetables" });
+            Categories.Add(new Category { Name = "Dairy" });
         }
+    }
 
-        private void AddCategory()
+    private void AddCategory()
+    {
+        if (!string.IsNullOrWhiteSpace(NewCategoryName))
         {
-            if (!string.IsNullOrWhiteSpace(NewCategoryName))
-            {
-                Categories.Add(new Category { Name = NewCategoryName });
-                NewCategoryName = string.Empty;
-                OnPropertyChanged(nameof(NewCategoryName));
-                SaveToXml();
-            }
+            Categories.Add(new Category { Name = NewCategoryName });
+            NewCategoryName = string.Empty;
+            OnPropertyChanged(nameof(NewCategoryName));
         }
+    }
 
-        private void AddProduct()
+    private void AddProduct()
+    {
+        if (SelectedCategory != null && !string.IsNullOrWhiteSpace(NewProductName))
         {
-            if (SelectedCategory != null && !string.IsNullOrWhiteSpace(NewProductName))
+            Products.Add(new Product
             {
-                Products.Add(new Product
-                {
-                    Name = NewProductName,
-                    Quantity = NewProductQuantity,
-                    Unit = NewProductUnit,
-                    IsPurchased = false,
-                    CategoryName = SelectedCategory.Name
-                });
-
-                NewProductName = string.Empty;
-                NewProductQuantity = 0;
-                NewProductUnit = string.Empty;
-                OnPropertyChanged(nameof(NewProductName));
-                OnPropertyChanged(nameof(NewProductQuantity));
-                OnPropertyChanged(nameof(NewProductUnit));
-                SaveToXml();
-            }
+                Name = NewProductName,
+                Quantity = 1,
+                Unit = NewProductUnit,
+                CategoryName = SelectedCategory.Name,
+                IsPurchased = false
+            });
+            NewProductName = string.Empty;
+            NewProductUnit = string.Empty;
+            OnPropertyChanged(nameof(NewProductName));
+            OnPropertyChanged(nameof(NewProductUnit));
+            SaveData();
         }
+    }
 
-        private void RemoveProduct(Product product)
+    private void IncreaseQuantity(Product? product)
+    {
+        if (product != null)
         {
-            if (Products.Contains(product))
-            {
-                Products.Remove(product);
-                SaveToXml();
-            }
+            product.Quantity++;
+            SortProducts();
+            OnPropertyChanged(nameof(Products));
+            SaveData();
         }
+    }
 
-        private void IncreaseQuantity(Product product)
+    private void DecreaseQuantity(Product? product)
+    {
+        if (product != null && product.Quantity > 0)
         {
-            if (product != null)
-            {
-                product.Quantity++;
-                SortProducts();
-                OnPropertyChanged(nameof(Products));
-                SaveToXml();
-            }
+            product.Quantity--;
+            SortProducts();
+            OnPropertyChanged(nameof(Products));
+            SaveData();
         }
+    }
 
-        private void DecreaseQuantity(Product product)
+    private void DeleteProduct(Product? product)
+    {
+        if (product != null)
         {
-            if (product != null && product.Quantity > 0)
-            {
-                product.Quantity--;
-                SortProducts();
-                OnPropertyChanged(nameof(Products));
-                SaveToXml();
-            }
+            Products.Remove(product);
+            SaveData();
         }
+    }
 
-        private void SortProducts()
+    private void SortProducts()
+    {
+        var sortedProducts = Products
+            .OrderBy(p => p.IsPurchased)
+            .ThenBy(p => p.Quantity == 0)
+            .ThenBy(p => p.Name)
+            .ToList();
+
+        Products.Clear();
+        foreach (var product in sortedProducts)
         {
-            var sortedProducts = Products.OrderBy(p => p.IsPurchased).ThenByDescending(p => p.Quantity).ToList();
-            Products.Clear();
-            foreach (var product in sortedProducts)
-            {
-                Products.Add(product);
-            }
+            Products.Add(product);
         }
+    }
 
-        private void SaveToXml()
+    private void SaveData()
+    {
+        try
         {
-            try
-            {
-                var data = new ShoppingListData
-                {
-                    Categories = Categories.ToList(),
-                    Products = Products.ToList()
-                };
-
-                using var writer = new StreamWriter(FilePath);
-                var serializer = new XmlSerializer(typeof(ShoppingListData));
-                serializer.Serialize(writer, data);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error saving data: {ex.Message}");
-            }
+            using var writer = new StreamWriter(FilePath);
+            var serializer = new XmlSerializer(typeof(ObservableCollection<Product>));
+            serializer.Serialize(writer, Products);
         }
-
-        private void LoadFromXml()
+        catch (Exception ex)
         {
-            if (!File.Exists(FilePath)) return;
+            Console.WriteLine($"Error saving data: {ex.Message}");
+        }
+    }
 
-            try
+    private void LoadData()
+    {
+        try
+        {
+            if (File.Exists(FilePath))
             {
                 using var reader = new StreamReader(FilePath);
-                var serializer = new XmlSerializer(typeof(ShoppingListData));
-                var data = serializer.Deserialize(reader) as ShoppingListData;
-
-                if (data != null)
-                {
-                    Categories = new ObservableCollection<Category>(data.Categories ?? new List<Category>());
-                    Products = new ObservableCollection<Product>(data.Products ?? new List<Product>());
-
-                    OnPropertyChanged(nameof(Categories));
-                    OnPropertyChanged(nameof(Products));
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error loading data: {ex.Message}");
+                var serializer = new XmlSerializer(typeof(ObservableCollection<Product>));
+                var loadedProducts = serializer.Deserialize(reader) as ObservableCollection<Product>;
+                Products = loadedProducts ?? new ObservableCollection<Product>();
+                OnPropertyChanged(nameof(Products));
             }
         }
-
-
-        public event PropertyChangedEventHandler? PropertyChanged;
-
-        protected void OnPropertyChanged(string propertyName)
+        catch (Exception ex)
         {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+            Console.WriteLine($"Error loading data: {ex.Message}");
         }
     }
 
-    [Serializable]
-    public class ShoppingListData
-    {
-        public List<Category> Categories { get; set; } = new List<Category>();
-        public List<Product> Products { get; set; } = new List<Product>();
-    }
 }
+

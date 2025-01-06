@@ -9,15 +9,15 @@ using ShoppingListApp.Models;
 using ShoppingListApp.ViewModels;
 using ShoppingListApp.Views;
 
-namespace ShoppingListApp.ViewModels
-{
-    public class BaseViewModel : INotifyPropertyChanged
-    {
-        public event PropertyChangedEventHandler? PropertyChanged;
+namespace ShoppingListApp.ViewModels;
 
-        protected void OnPropertyChanged(string propertyName)
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-        }
+public class BaseViewModel : INotifyPropertyChanged
+{
+    public event PropertyChangedEventHandler? PropertyChanged;
+
+    protected void OnPropertyChanged(string propertyName)
+    {
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     }
 }
+
