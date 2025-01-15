@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="ShoppingListApp.Views.ProductView">
+    <ScrollView>
+        <StackLayout Orientation="Horizontal" Padding="10" Spacing="5">
+            <Label Text="{Binding Name}" 
+                   VerticalOptions="Center" 
+                   WidthRequest="100"
+                   TextDecorations="{Binding IsPurchased, Converter={StaticResource BoolToTextDecorationConverter}}"
+                   TextColor="{Binding IsPurchased, Converter={StaticResource BoolToColorConverter}}" />
+            <Label Text="{Binding Unit}" 
+                   VerticalOptions="Center" 
+                   WidthRequest="50"
+                   TextDecorations="{Binding IsPurchased, Converter={StaticResource BoolToTextDecorationConverter}}"
+                   TextColor="{Binding IsPurchased, Converter={StaticResource BoolToColorConverter}}" />
+            <Button Text="+" IsEnabled="{Binding IsPurchased, Converter={StaticResource InvertBoolConverter}}" Clicked="OnIncreaseQuantityClicked" />
+            <Entry Text="{Binding Quantity}" 
+                   Keyboard="Numeric" 
+                   WidthRequest="50" 
+                   VerticalOptions="Center" 
+                   IsEnabled="{Binding IsPurchased, Converter={StaticResource InvertBoolConverter}}" />
+            <Button Text="-" IsEnabled="{Binding IsPurchased, Converter={StaticResource InvertBoolConverter}}" Clicked="OnDecreaseQuantityClicked" />
+            <Button Text="Kupione" Clicked="OnTogglePurchasedClicked" />
+            <Button Text="Usuń" Clicked="OnRemoveProductClicked" />
+        </StackLayout>
+    </ScrollView>
+</ContentView>
